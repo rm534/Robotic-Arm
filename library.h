@@ -1,7 +1,7 @@
 #ifndef NUNCHUCK_LIBRARY_H
 #define NUNCHUCK_LIBRARY_H
 
-#include "Wire.h"
+#include <Wire.h>
 #include <cstdint>
 
 // calibration values for accelerometer on the nunchuck
@@ -38,8 +38,32 @@ static void nunchuck_init() {
     delay(1)
 }
 
+I2C_START(I2C_ADDRESS);
+I2C_WRITE(0x40) //Not sure what this is for
+I2C_WRITE(0x00)
+I2C_STOP();
 
+static inline uint8_t nunchuck_decode_byte(uint8_t x) {
+    return (x ^ 0x17) + 0x17;
+}
 
+static uint8_t nunchuck_read() {
+    uint8_t i;
+    Wire.requestFrom(I2C_ADDRESS, 6);
+    for (i = 0; i<6 && Wire.available(); i++){
+        nunchuck_data[i] = nunchuck_decode_byte(I2C_READ());
+    }
+    I2C_START(I2C_ADDRESS);
+    I2C_WRITE(0x00);
+    I2C_STOP();
+    return i == 6;
+}
+
+static uint8_t  nunchuck_buttonZ() {
+    return (~nunchuck_data[5] >> 1) & 1;
+}
+
+static uint8_t
 void hello();
 
 #endif
